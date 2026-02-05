@@ -1,6 +1,338 @@
 # Slack-Claude Bridge
 
-Slack에서 Claude Code를 제어할 수 있는 브릿지 서버입니다.
+Control Claude Code from anywhere via Slack.
+
+Chat with Claude Code from your phone's Slack app - edit files, run Git commands, and more.
+
+**[한국어 버전은 아래에 있습니다](#한국어-버전)**
+
+---
+
+## Features
+
+- **Slack DM**: Chat with Claude Code via direct messages
+- **Channel Mentions**: Call the bot with `@botname question` in channels
+- **Thread Conversations**: Continue conversations in threads after mentioning
+- **Session Persistence**: Maintains conversation context for continuous work
+- **Full Claude Code Access**: File editing, Git commands, and all Claude Code features
+
+---
+
+## Prerequisites
+
+| Item | Description | Installation |
+|------|-------------|--------------|
+| Node.js | Version 18+ | [nodejs.org](https://nodejs.org/) |
+| Claude Code | Anthropic CLI tool | `npm install -g @anthropic-ai/claude-code` |
+| ngrok | Expose local server to internet | [ngrok.com](https://ngrok.com/download) |
+| Slack Workspace | Admin access required | - |
+
+### Verify Claude Code Installation
+
+```bash
+claude --version
+```
+
+If not logged in:
+
+```bash
+claude
+# Follow the login prompts
+```
+
+---
+
+## Step 1: Install the Project
+
+### 1-1. Download the Code
+
+```bash
+git clone https://github.com/djatjdwns28/slack-bot-claude-code-local.git
+cd slack-bot-claude-code-local
+```
+
+### 1-2. Install Dependencies
+
+```bash
+npm install
+```
+
+---
+
+## Step 2: Create a Slack App
+
+### 2-1. Create New App
+
+1. Go to [Slack API](https://api.slack.com/apps)
+2. Click **Create New App**
+3. Select **From scratch**
+4. Enter app name (e.g., `Claude Bot`)
+5. Select workspace and click **Create App**
+
+### 2-2. Configure Permissions
+
+1. Click **OAuth & Permissions** in the left menu
+2. Scroll to **Scopes** section
+3. Under **Bot Token Scopes**, click **Add an OAuth Scope**
+4. Add all of these permissions:
+
+| Scope | Description |
+|-------|-------------|
+| `chat:write` | Send messages |
+| `im:history` | Read DM history |
+| `im:read` | Access DM channels |
+| `app_mentions:read` | Read mentions |
+| `channels:history` | Read channel messages |
+
+### 2-3. Install the App
+
+1. Click **Install to Workspace** at the top
+2. Click **Allow**
+3. Copy the **Bot User OAuth Token** (starts with `xoxb-`)
+
+> ⚠️ Keep this token secure!
+
+---
+
+## Step 3: Set Up ngrok
+
+ngrok exposes your local server to the internet.
+
+### 3-1. Install ngrok
+
+**Mac (Homebrew):**
+```bash
+brew install ngrok
+```
+
+**Windows / Direct Download:**
+Download from [ngrok.com/download](https://ngrok.com/download)
+
+### 3-2. Connect ngrok Account (Optional)
+
+1. Create a free account at [ngrok.com](https://ngrok.com/)
+2. Copy **Your Authtoken** from the Dashboard
+3. Run in terminal:
+
+```bash
+ngrok config add-authtoken YOUR_TOKEN
+```
+
+### 3-3. Run ngrok
+
+```bash
+ngrok http 3005
+```
+
+You'll see output like:
+
+```
+Forwarding    https://abc123.ngrok-free.dev -> http://localhost:3005
+```
+
+Copy the **`https://abc123.ngrok-free.dev`** URL (changes each time)
+
+> 💡 Keep the ngrok window open!
+
+---
+
+## Step 4: Connect Slack Events
+
+### 4-1. Configure Event Subscriptions
+
+1. Go to [Slack API](https://api.slack.com/apps) and select your app
+2. Click **Event Subscriptions** in the left menu
+3. Toggle **Enable Events** on
+4. Enter in **Request URL**:
+
+```
+https://abc123.ngrok-free.dev/slack/events
+```
+
+(Replace `abc123` with your ngrok URL)
+
+5. Verify you see ✅ **Verified**
+
+> ⚠️ If not verified, make sure your server is running (Step 5)
+
+### 4-2. Subscribe to Events
+
+On the same page, click **Subscribe to bot events** and add:
+
+| Event | Description |
+|-------|-------------|
+| `message.im` | DM messages |
+| `app_mention` | @mentions |
+| `message.channels` | Channel messages (for threads) |
+
+### 4-3. Save
+
+Click **Save Changes** at the bottom
+
+> 💡 You may need to reinstall the app if permissions were added.
+
+---
+
+## Step 5: Configure and Run the Server
+
+### 5-1. Set Environment Variables
+
+```bash
+cp .env.example .env
+```
+
+Edit the `.env` file:
+
+```env
+# Required: Bot Token from Step 2-3
+SLACK_BOT_TOKEN=xoxb-paste-your-token-here
+
+# Server port (default 3005, no change needed)
+PORT=3005
+
+# Directories Claude can access (comma-separated)
+CLAUDE_ALLOWED_DIRS=~/projects,~/work
+
+# Skip permission prompts (recommended: true)
+CLAUDE_SKIP_PERMISSIONS=true
+
+# Claude model to use (opus, sonnet, haiku)
+CLAUDE_MODEL=opus
+```
+
+### 5-2. Start the Server
+
+```bash
+npm start
+```
+
+On success:
+
+```
+[Server] Slack Bridge running on port 3005
+[Server] Commands:
+         !new, !reset       - Start new session
+```
+
+---
+
+## Usage
+
+### DM Conversations
+
+1. Find the bot in Slack (search by app name)
+2. Send a DM
+
+```
+Hey! Show me the file list
+```
+
+### Channel Mentions
+
+```
+@Claude run git status in ~/projects/my-app
+```
+
+> 💡 To use in a channel, first invite the bot: `/invite @botname`
+
+### Continue in Threads
+
+Conversations started with a mention can continue in the thread without mentioning again.
+
+---
+
+## Special Commands
+
+Use these commands in Slack:
+
+| Command | Description |
+|---------|-------------|
+| `!new` | Start new session (reset conversation) |
+| `!reset` | Start new session (same as above) |
+| `!session` | Check current session ID |
+| `!session SESSION_ID` | Switch to a specific session |
+
+> 💡 Use `!` instead of `/` to avoid Slack slash command conflicts
+
+---
+
+## Share Sessions Between Terminal & Slack
+
+You can continue a terminal session in Slack.
+
+### Terminal → Slack
+
+1. Run Claude Code in terminal: `claude`
+2. Type `/sessions` to get the session ID
+3. In Slack: `!session SESSION_ID`
+
+### Slack → Terminal
+
+> ⚠️ Sessions started in Slack cannot be continued in terminal (technical limitation)
+
+---
+
+## Troubleshooting
+
+### "Verified" Not Showing
+
+- Check if server is running
+- Check if ngrok is running
+- Verify URL is correct (includes `/slack/events`)
+
+### Bot Not Responding
+
+- Check server logs: run with `npm start` and watch output
+- Check if requests appear in ngrok terminal
+- Verify all Slack app scopes are added
+
+### Stuck at "Processing..."
+
+- Verify Claude Code is installed
+- Verify Claude Code is logged in
+- First request may be slow due to initialization (30s-1min)
+
+### ngrok URL Changed
+
+When ngrok restarts, the URL changes. Each time:
+1. Slack App → Event Subscriptions → Update Request URL
+2. Save Changes
+
+---
+
+## Advanced Setup
+
+### Run in Background with PM2
+
+```bash
+npm install -g pm2
+pm2 start index.js --name slack-claude
+pm2 save
+```
+
+### Environment Variable Options
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SLACK_BOT_TOKEN` | Slack Bot token | (required) |
+| `PORT` | Server port | 3005 |
+| `CLAUDE_ALLOWED_DIRS` | Allowed directories | - |
+| `CLAUDE_SKIP_PERMISSIONS` | Skip permission prompts | false |
+| `CLAUDE_MODEL` | Model to use | opus |
+
+---
+
+## License
+
+MIT
+
+---
+
+---
+
+# 한국어 버전
+
+Slack으로 어디서든 Claude Code를 제어하세요.
 
 스마트폰의 Slack 앱에서도 Claude Code와 대화하고, 파일 편집, Git 명령어 실행 등이 가능합니다.
 
@@ -18,8 +350,6 @@ Slack에서 Claude Code를 제어할 수 있는 브릿지 서버입니다.
 
 ## 사전 준비물
 
-시작하기 전에 아래 항목들이 필요합니다:
-
 | 항목 | 설명 | 설치 방법 |
 |------|------|----------|
 | Node.js | 버전 18 이상 | [nodejs.org](https://nodejs.org/) |
@@ -28,8 +358,6 @@ Slack에서 Claude Code를 제어할 수 있는 브릿지 서버입니다.
 | Slack 워크스페이스 | 관리자 권한 필요 | - |
 
 ### Claude Code 설치 확인
-
-터미널에서 아래 명령어가 동작하는지 확인하세요:
 
 ```bash
 claude --version
