@@ -15,6 +15,7 @@ Slack에서 Claude Code를 제어할 수 있는 브릿지 서버입니다.
 - Node.js 18+
 - [Claude Code CLI](https://github.com/anthropics/claude-code) 설치 및 로그인
 - Slack 워크스페이스 관리자 권한
+- [ngrok](https://ngrok.com/) (로컬 개발용)
 
 ## 설치
 
@@ -62,19 +63,56 @@ CLAUDE_ALLOWED_DIRS=~/projects,~/work
 CLAUDE_SKIP_PERMISSIONS=true
 ```
 
-## 실행
+## ngrok 설정 (로컬 개발용)
 
-### 개발 환경 (ngrok 사용)
+Slack Events API는 공개 URL이 필요합니다. 로컬 개발 시 ngrok을 사용하여 터널을 생성합니다.
+
+### 1. ngrok 설치
 
 ```bash
-# 터미널 1: 서버 실행
-node index.js
+# macOS (Homebrew)
+brew install ngrok
 
-# 터미널 2: ngrok 터널
+# 또는 직접 다운로드
+# https://ngrok.com/download
+```
+
+### 2. ngrok 계정 연결 (선택사항, 무료 계정으로 충분)
+
+```bash
+ngrok config add-authtoken YOUR_AUTH_TOKEN
+```
+
+### 3. ngrok 실행
+
+```bash
 ngrok http 3005
 ```
 
-ngrok URL을 Slack Event Subscriptions의 Request URL에 설정
+### 4. ngrok URL 확인
+
+ngrok 실행 후 터미널에 표시되는 URL 확인:
+
+```
+Forwarding    https://xxxx-xxx-xxx.ngrok-free.dev -> http://localhost:3005
+```
+
+이 URL을 Slack Event Subscriptions의 Request URL에 사용합니다:
+- `https://xxxx-xxx-xxx.ngrok-free.dev/slack/events`
+
+> **참고**: ngrok을 재시작하면 URL이 변경됩니다. 변경 시 Slack 앱 설정도 업데이트 필요합니다.
+
+## 실행
+
+### 개발 환경
+
+```bash
+# 터미널 1: 서버 실행
+npm start
+
+# 터미널 2: ngrok 터널 (별도 터미널)
+ngrok http 3005
+```
 
 ### 프로덕션
 

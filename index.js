@@ -212,10 +212,11 @@ function runClaudeCode(userId, prompt) {
     // 환경변수에서 옵션 구성
     const allowedDirs = process.env.CLAUDE_ALLOWED_DIRS || '';
     const skipPermissions = process.env.CLAUDE_SKIP_PERMISSIONS === 'true';
+    const model = process.env.CLAUDE_MODEL || 'opus';
 
-    let baseOpts = '';
+    let baseOpts = `--model ${model}`;
     if (allowedDirs) {
-      baseOpts += allowedDirs.split(',').map(d => `--add-dir ${d.trim()}`).join(' ');
+      baseOpts += ' ' + allowedDirs.split(',').map(d => `--add-dir ${d.trim()}`).join(' ');
     }
     if (skipPermissions) {
       baseOpts += ' --dangerously-skip-permissions';
