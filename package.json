@@ -1,0 +1,28 @@
+{
+  "name": "slack-claude-bridge",
+  "version": "1.0.0",
+  "description": "Slack에서 Claude Code를 제어할 수 있는 브릿지 서버",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": [
+    "slack",
+    "claude",
+    "claude-code",
+    "ai",
+    "chatbot"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@slack/web-api": "^7.13.0",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
