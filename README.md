@@ -187,6 +187,16 @@ Edit the `.env` file:
 # Required: Bot Token from Step 2-3
 SLACK_BOT_TOKEN=xoxb-paste-your-token-here
 
+# Security: Signing Secret (recommended)
+# Slack App > Basic Information > Signing Secret
+SLACK_SIGNING_SECRET=your-signing-secret
+
+# Security: Allowed User IDs (required)
+# Comma-separated Slack User IDs
+# Server won't start without this
+# Find your ID: Slack profile > More > Copy member ID
+ALLOWED_USERS=U0XXXXXXXX
+
 # Server port (default 3005, no change needed)
 PORT=3005
 
@@ -315,6 +325,8 @@ pm2 save
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `SLACK_BOT_TOKEN` | Slack Bot token | (required) |
+| `SLACK_SIGNING_SECRET` | Request signature verification | - |
+| `ALLOWED_USERS` | Comma-separated allowed User IDs | (required) |
 | `PORT` | Server port | 3005 |
 | `CLAUDE_ALLOWED_DIRS` | Allowed directories | - |
 | `CLAUDE_SKIP_PERMISSIONS` | Skip permission prompts | false |
@@ -517,6 +529,16 @@ cp .env.example .env
 # 필수: 2-3단계에서 복사한 Bot Token
 SLACK_BOT_TOKEN=xoxb-여기에-토큰-붙여넣기
 
+# 보안: Signing Secret (권장)
+# Slack 앱 > Basic Information > Signing Secret
+SLACK_SIGNING_SECRET=여기에-시크릿-붙여넣기
+
+# 보안: 허용된 사용자 ID (필수)
+# 쉼표로 구분된 Slack User ID
+# 이 값이 없으면 서버가 시작되지 않습니다
+# 확인 방법: Slack 프로필 > 더보기 > 멤버 ID 복사
+ALLOWED_USERS=U0XXXXXXXX
+
 # 서버 포트 (기본값 3005, 변경 불필요)
 PORT=3005
 
@@ -645,6 +667,8 @@ pm2 save
 | 변수 | 설명 | 기본값 |
 |------|------|--------|
 | `SLACK_BOT_TOKEN` | Slack Bot 토큰 | (필수) |
+| `SLACK_SIGNING_SECRET` | 요청 서명 검증 | - |
+| `ALLOWED_USERS` | 허용된 사용자 ID (쉼표 구분) | (필수) |
 | `PORT` | 서버 포트 | 3005 |
 | `CLAUDE_ALLOWED_DIRS` | 접근 허용 디렉토리 | - |
 | `CLAUDE_SKIP_PERMISSIONS` | 권한 확인 건너뛰기 | false |

@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { spawn } from 'child_process';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHmac, timingSafeEqual } from 'crypto';
 import { WebClient } from '@slack/web-api';
 
 const app = express();
@@ -12,10 +12,23 @@ const PORT = process.env.PORT || 3005;
 
 // Slack 설정
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
+const SLACK_SIGNING_SECRET = process.env.SLACK_SIGNING_SECRET;
+const ALLOWED_USERS = process.env.ALLOWED_USERS?.split(',').map(u => u.trim()) || [];
+
 if (!SLACK_BOT_TOKEN) {
   console.error('[Error] SLACK_BOT_TOKEN 환경변수가 필요합니다!');
   process.exit(1);
 }
+if (!SLACK_SIGNING_SECRET) {
+  console.warn('[Warning] SLACK_SIGNING_SECRET이 없습니다. 요청 검증이 비활성화됩니다.');
+}
+if (ALLOWED_USERS.length === 0) {
+  console.error('[Error] ALLOWED_USERS가 필요합니다! 보안을 위해 허용된 사용자를 설정하세요.');
+  console.error('        예: ALLOWED_USERS=U0XXXXXXXX,U0YYYYYYYY');
+  process.exit(1);
+}
+console.log(`[Security] 허용된 사용자: ${ALLOWED_USERS.join(', ')}`);
+
 const slack = new WebClient(SLACK_BOT_TOKEN);
 
 // 브릿지 디렉토리 설정
@@ -87,10 +100,52 @@ function getThreadUser(threadKey) {
   return threads[threadKey]?.userId;
 }
 
-app.use(express.json());
+// Raw body 저장 (서명 검증용)
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
+
+// Slack 요청 서명 검증 함수
+function verifySlackRequest(req) {
+  if (!SLACK_SIGNING_SECRET) return true; // 시크릿 없으면 스킵
+
+  const signature = req.headers['x-slack-signature'];
+  const timestamp = req.headers['x-slack-request-timestamp'];
+
+  if (!signature || !timestamp) return false;
+
+  // 5분 이상 된 요청 거부 (replay attack 방지)
+  const now = Math.floor(Date.now() / 1000);
+  if (Math.abs(now - parseInt(timestamp)) > 300) {
+    console.warn('[Security] 요청 타임스탬프가 오래됨');
+    return false;
+  }
+
+  const baseString = `v0:${timestamp}:${req.rawBody}`;
+  const hmac = createHmac('sha256', SLACK_SIGNING_SECRET);
+  const computed = 'v0=' + hmac.update(baseString).digest('hex');
+
+  try {
+    return timingSafeEqual(Buffer.from(signature), Buffer.from(computed));
+  } catch {
+    return false;
+  }
+}
+
+// 사용자 화이트리스트 검증 함수
+function isUserAllowed(userId) {
+  return ALLOWED_USERS.includes(userId);
+}
 
 // Slack Events API 엔드포인트
 app.post('/slack/events', (req, res) => {
+  // 서명 검증
+  if (!verifySlackRequest(req)) {
+    console.warn('[Security] 유효하지 않은 Slack 서명');
+    return res.status(401).send('Unauthorized');
+  }
   const { type, challenge, event } = req.body;
 
   // URL 검증 (Event Subscriptions 설정 시 필요)
@@ -111,6 +166,12 @@ app.post('/slack/events', (req, res) => {
 async function handleSlackEvent(event) {
   // 봇 자신의 메시지는 무시
   if (event.bot_id || event.subtype === 'bot_message') {
+    return;
+  }
+
+  // 사용자 화이트리스트 검증
+  if (!isUserAllowed(event.user)) {
+    console.warn(`[Security] 허용되지 않은 사용자: ${event.user}`);
     return;
   }
 
