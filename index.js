@@ -143,6 +143,32 @@ async function handleSlackEvent(event) {
     return;
   }
 
+  // 세션 전환 명령어: /session <id>
+  const sessionMatch = userMessage.match(/^\/session\s+(.+)$/i);
+  if (sessionMatch) {
+    const newSessionId = sessionMatch[1].trim();
+    saveSession(userId, newSessionId);
+    await slack.chat.postMessage({
+      channel: event.channel,
+      text: `🔗 세션이 전환되었습니다: \`${newSessionId}\``,
+      thread_ts: replyThreadTs
+    });
+    return;
+  }
+
+  // 현재 세션 확인 명령어: /session
+  if (userMessage.toLowerCase() === '/session') {
+    const currentSession = getSession(userId);
+    await slack.chat.postMessage({
+      channel: event.channel,
+      text: currentSession
+        ? `📍 현재 세션: \`${currentSession}\``
+        : '❌ 활성 세션이 없습니다.',
+      thread_ts: replyThreadTs
+    });
+    return;
+  }
+
   // 멘션으로 시작된 스레드 저장
   if (isMention && !event.thread_ts) {
     const newThreadKey = `${event.channel}-${event.ts}`;

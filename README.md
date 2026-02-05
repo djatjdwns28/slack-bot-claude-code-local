@@ -143,6 +143,18 @@ node index.js
 ### 특수 명령어
 
 - `/new` 또는 `/reset` - 새 세션 시작 (대화 기록 초기화)
+- `/session` - 현재 세션 ID 확인
+- `/session <id>` - 특정 세션으로 전환 (터미널 세션 이어가기 가능)
+
+### 터미널 ↔ Slack 세션 공유
+
+**Slack → 터미널:**
+1. Slack에서 `/session` 입력하여 세션 ID 확인
+2. 터미널에서 `claude --resume <session_id>` 실행
+
+**터미널 → Slack:**
+1. 터미널에서 세션 ID 확인: `claude /sessions` 또는 최근 세션 사용
+2. Slack에서 `/session <id>` 입력하여 세션 전환
 
 ## API 엔드포인트
 
