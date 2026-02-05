@@ -132,8 +132,9 @@ async function handleSlackEvent(event) {
   const replyThreadTs = event.thread_ts || event.ts;
   console.log(`[Slack] Message from ${userId}: ${userMessage.substring(0, 50)}...`);
 
-  // 특수 명령어 처리
-  if (userMessage.toLowerCase() === '/new' || userMessage.toLowerCase() === '/reset') {
+  // 특수 명령어 처리 (! 또는 / 접두사 지원)
+  const msg = userMessage.toLowerCase();
+  if (msg === '!new' || msg === '!reset' || msg === '/new' || msg === '/reset') {
     clearSession(userId);
     await slack.chat.postMessage({
       channel: event.channel,
@@ -143,8 +144,8 @@ async function handleSlackEvent(event) {
     return;
   }
 
-  // 세션 전환 명령어: /session <id>
-  const sessionMatch = userMessage.match(/^\/session\s+(.+)$/i);
+  // 세션 전환 명령어: !session <id>
+  const sessionMatch = userMessage.match(/^[!\/]session\s+(.+)$/i);
   if (sessionMatch) {
     const newSessionId = sessionMatch[1].trim();
     saveSession(userId, newSessionId);
@@ -156,8 +157,8 @@ async function handleSlackEvent(event) {
     return;
   }
 
-  // 현재 세션 확인 명령어: /session
-  if (userMessage.toLowerCase() === '/session') {
+  // 현재 세션 확인 명령어: !session 또는 !sessions
+  if (msg === '!session' || msg === '!sessions' || msg === '/session' || msg === '/sessions') {
     const currentSession = getSession(userId);
     await slack.chat.postMessage({
       channel: event.channel,
