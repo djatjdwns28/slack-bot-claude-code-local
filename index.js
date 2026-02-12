@@ -826,7 +826,10 @@ app.message(async ({ event, say }) => {
     handleWatchUserMention(event).catch(err =>
       console.error('[Watch] Handler error:', err.message)
     );
+    // 채널/스레드 메시지는 봇 멘션(@봇)이 있을 때만 처리 (app_mention 핸들러에서 처리)
+    return;
   }
+  // DM만 여기서 처리
   await handleSlackEvent({ event, say });
 });
 
